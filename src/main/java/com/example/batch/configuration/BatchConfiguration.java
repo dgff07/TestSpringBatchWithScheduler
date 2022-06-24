@@ -1,51 +1,37 @@
 package com.example.batch.configuration;
 
-
-import com.example.batch.executors.JobExecutorManager;
-import com.example.batch.tasks.PrintSomethingTask;
-import org.springframework.batch.core.Job;
-import org.springframework.batch.core.Step;
-import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
-import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
-import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
-import org.springframework.batch.core.configuration.annotation.StepScope;
-import org.springframework.batch.core.launch.support.RunIdIncrementer;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.ApplicationContext;
+import org.springframework.batch.core.configuration.annotation.BatchConfigurer;
+import org.springframework.batch.core.configuration.annotation.DefaultBatchConfigurer;
+import org.springframework.batch.core.launch.JobLauncher;
+import org.springframework.batch.core.launch.support.SimpleJobLauncher;
+import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 @Configuration
-@EnableBatchProcessing
 public class BatchConfiguration {
 
-    private JobBuilderFactory jobBuilderFactory;
-
-    private StepBuilderFactory stepBuilderFactory;
-
-    private ApplicationContext context;
-
-    public BatchConfiguration(JobBuilderFactory jobBuilderFactory, StepBuilderFactory stepBuilderFactory, ApplicationContext context) {
-        this.jobBuilderFactory = jobBuilderFactory;
-        this.stepBuilderFactory = stepBuilderFactory;
-        this.context = context;
+    @Bean
+    public ThreadPoolTaskExecutor taskExecutor() {
+        ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
+        taskExecutor.setCorePoolSize(15);
+        taskExecutor.setMaxPoolSize(20);
+        taskExecutor.setQueueCapacity(30);
+        return taskExecutor;
     }
 
     @Bean
-    public Job printSomethingJob(Step step1) {
-        return jobBuilderFactory.get("printSomething").incrementer(new RunIdIncrementer()).flow(step1).end().build();
-    }
-
-    @Bean
-    public Step step1(PrintSomethingTask printSomethingTask) {
-        return stepBuilderFactory.get("step1").tasklet(printSomethingTask).build();
-    }
-
-    @Bean
-    @StepScope
-    public PrintSomethingTask printSomethingTask(@Value("#{jobParameters[cluster]}") String clusterName, JobExecutorManager jobExecutorManager) {
-        PrintSomethingTask task = new PrintSomethingTask(clusterName, jobExecutorManager);
-        return task;
+    public BatchConfigurer batchConfigurer(JobRepository jobRepository, ThreadPoolTaskExecutor taskExecutor) {
+        return new DefaultBatchConfigurer() {
+            @Override
+            public JobLauncher getJobLauncher() {
+                SimpleJobLauncher jobLauncher = new SimpleJobLauncher();
+                jobLauncher.setTaskExecutor(taskExecutor);
+                jobLauncher.setJobRepository(jobRepository);
+                return jobLauncher;
+            }
+        };
     }
 
 }
