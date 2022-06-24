@@ -1,0 +1,16 @@
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - metrics
+          - prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+spring:
+  batch:
+    job:
+      enabled: false
