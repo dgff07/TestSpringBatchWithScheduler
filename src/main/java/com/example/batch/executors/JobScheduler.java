@@ -15,11 +15,11 @@ import java.util.Enumeration;
 @Component
 public class JobScheduler {
 
-    private static Logger LOGGER = LoggerFactory.getLogger(JobScheduler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JobScheduler.class);
 
-    private Job printSomethingJob;
-    private JobLauncher jobLauncher;
-    private JobExecutorManager jobExecutorManager;
+    private final Job printSomethingJob;
+    private final JobLauncher jobLauncher;
+    private final JobExecutorManager jobExecutorManager;
 
     public JobScheduler(Job printSomethingJob, JobLauncher jobLauncher, JobExecutorManager jobExecutorManager) {
         this.printSomethingJob = printSomethingJob;
@@ -27,7 +27,7 @@ public class JobScheduler {
         this.jobExecutorManager = jobExecutorManager;
     }
 
-    @Scheduled(fixedDelay = 1000)
+    @Scheduled(fixedDelayString = "${scheduler.delay}")
     public void perform() throws Exception {
         Enumeration<String> clusterNames = jobExecutorManager.getClustersNames();
 
@@ -60,6 +60,6 @@ public class JobScheduler {
         if (!StringUtils.hasText(clusterName)) {
             throw new IllegalArgumentException("The cluster name must be defined");
         }
-        return clusterName + "_" + String.valueOf(System.currentTimeMillis());
+        return clusterName + "_" + System.currentTimeMillis();
     }
 }
